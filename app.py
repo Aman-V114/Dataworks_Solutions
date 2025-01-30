@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
+import openai
+
 
 app = FastAPI()
 
@@ -32,7 +34,7 @@ async def read_file(request: Request):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+        raise HTTPException(status_code=500, detail=str(e))
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000, debug=True)
