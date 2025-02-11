@@ -1,17 +1,24 @@
 import subprocess
 import json
 import requests
+import pydantic
+import os
+import config
+
+class DataworksSolutions(pydantic.BaseModel):
+    messages: list
+    functions: list
+    function_call: str
+
 
 # AIProxy URL (assuming it's running locally)
-
-AI_PROXY_URL = "http://aiproxy.sanand.workers.dev/openai/v1"
-
 # Define function schemas
+
 
 functions = [
     {
-        "name": "install_library",
-        "description": "Installs a Python library using pip.",
+        "name": "A1",
+        "description": "Installs uv if not present and runs datagen.py file on the github repo link provided",
         "parameters": {
             "type": "object",
             "properties": {
@@ -20,17 +27,6 @@ functions = [
             "required": ["package_name"],
         },
     },
-    {
-        "name": "run_python_file",
-        "description": "Executes a Python script and returns the output.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_path": {"type": "string", "description": "Path to the Python script file."}
-            },
-            "required": ["file_path"],
-        },
-    }
 ]
 
 # Function to install a library

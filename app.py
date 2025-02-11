@@ -1,20 +1,22 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
-import openai
-
 
 app = FastAPI()
+
 
 @app.post("/run")
 async def run_task(request: Request):
     task_description = request.query_params.get('task')
     
+    
+    
     if not task_description:
         raise HTTPException(status_code=400, detail="Task description is required")
     
     try:
-        # Add your task execution logic here
+        # Call AIProxy
+        
         pass
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error in task: {str(e)}")
