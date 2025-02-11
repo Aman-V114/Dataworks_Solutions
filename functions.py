@@ -1,9 +1,11 @@
 import subprocess
 import json
+from unittest import result
 import requests
 import pydantic
 import os
 import config
+import requests
 
 class DataworksSolutions(pydantic.BaseModel):
     messages: list
@@ -29,6 +31,86 @@ functions = [
     },
 ]
 
+
+config_obj=config.Config_API()
+
+# Set the API endpoint
+url = config_obj.ChatEndpoint
+
+# Set the headers
+auth_token = config_obj.API_KEY  # Retrieve the token from environment variable
+
+
+
+def chat_with_aiproxy(user_input):
+    print("here")
+    headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {auth_token}"
+    }
+
+    # Define the payload
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": user_input}]
+    }
+
+    # Make the POST request
+    data["functions"] = functions
+    
+    
+    response = requests.post(url, json=data, headers=headers)
+    
+    
+    response_data = response.json()
+
+    # Extract model's response
+    response_message = response_data["choices"][0]["message"]
+
+
+    # Check if there is a function call
+    
+    if response_message.get("function_call"):
+        
+        function_name = response_message["function_call"]["name"]
+        
+        function_args = json.loads(response_message["function_call"]["arguments"])
+
+        # Call the appropriate function
+        
+        if function_name == "A1":
+            result = run_datagen(**function_args)
+        
+        elif function_name == "run_python_file":
+            result = run_python_file(**function_args)
+        
+        else:
+            result = "Unknown function."
+
+        return result
+
+    return response_message["content"]  # If no function call, return normal AI response
+
+
+def run_datagen(email):
+    
+    try:
+        
+        result = subprocess.run(["python3", "datagen.py", email], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+        
+            return json.dumps({"message": "Datagen files created Successfully"})
+        
+        else:
+        
+            return json.dumps({"error": result.stderr})
+        
+    except Exception as e:
+        
+        return json.dumps({"error": str(e)})
+
+
 # Function to install a library
 def install_library(package_name):
     try:
@@ -36,6 +118,7 @@ def install_library(package_name):
         return result.stdout or result.stderr
     except Exception as e:
         return str(e)
+
 
 # Function to execute a Python file
 def run_python_file(file_path):
@@ -46,40 +129,4 @@ def run_python_file(file_path):
         return str(e)
 
 # Function to process user input and call AIProxy
-def chat_with_aiproxy(user_input):
-    payload = {
-        "model": "gpt-4-turbo",
-        "messages": [{"role": "user", "content": user_input}],
-        "functions": functions,
-        "function_call": "auto",  # Let OpenAI decide
-    }
 
-    response = requests.post(AI_PROXY_URL, json=payload)
-    response_data = response.json()
-
-    # Extract model's response
-    response_message = response_data["choices"][0]["message"]
-
-    if response_message.get("function_call"):
-        function_name = response_message["function_call"]["name"]
-        function_args = json.loads(response_message["function_call"]["arguments"])
-
-        # Call the appropriate function
-        if function_name == "install_library":
-            result = install_library(**function_args)
-        elif function_name == "run_python_file":
-            result = run_python_file(**function_args)
-        else:
-            result = "Unknown function."
-
-        return result
-
-    return response_message["content"]  # If no function call, return normal AI response
-
-# Run chatbot loop
-while True:
-    user_input = input("You: ")
-    if user_input.lower() in ["exit", "quit"]:
-        break
-    response = chat_with_aiproxy(user_input)
-    print(f"Bot: {response}")

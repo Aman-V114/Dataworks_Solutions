@@ -1,27 +1,22 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
+import functions
+
 
 app = FastAPI()
 
-
 @app.post("/run")
-async def run_task(request: Request):
-    task_description = request.query_params.get('task')
-    
-    
-    
-    if not task_description:
+async def run_task(task: str = Query(..., description="Task description")):
+    if not task:
         raise HTTPException(status_code=400, detail="Task description is required")
     
     try:
-        # Call AIProxy
-        
-        pass
+        response = await functions.chat_with_aiproxy(task)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error in task: {str(e)}")
     
-    return JSONResponse(content={"message": f"Task '{task_description}' is running"}, status_code=200)
+    return JSONResponse(content={"message": response}, status_code=200)
 
 
 @app.get("/read")
@@ -41,4 +36,4 @@ async def read_file(request: Request):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=8000, debug=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
