@@ -4,7 +4,7 @@ from unittest import result
 import requests
 import pydantic
 import os
-import config
+from config import Config_API
 import requests
 
 class DataworksSolutions(pydantic.BaseModel):
@@ -32,24 +32,27 @@ functions = [
 ]
 
 
-config_obj=config.Config_API()
+config_obj=Config_API()
+
+print(config_obj.ChatEndpoint)
 
 # Set the API endpoint
 url = config_obj.ChatEndpoint
 
 # Set the headers
-auth_token = config_obj.API_KEY  # Retrieve the token from environment variable
+auth_token = config_obj.AIPROXY_TOKEN  # Retrieve the token from environment variable
 
 
 
 def chat_with_aiproxy(user_input):
+    
     print("here")
     headers = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {auth_token}"
+    "Authorization": f"Bearer {config_obj.AIPROXY_TOKEN}"
     }
 
-    # Define the payload
+    # Define the payloadcle
     data = {
         "model": "gpt-4o-mini",
         "messages": [{"role": "user", "content": user_input}]
@@ -65,8 +68,12 @@ def chat_with_aiproxy(user_input):
     response_data = response.json()
 
     # Extract model's response
-    response_message = response_data["choices"][0]["message"]
+    # Check if 'choices' key is present in the response data
+    
+    if "choices" not in response_data:
+        raise ValueError("Invalid response from AIProxy API: 'choices' key not found")
 
+    response_message = response_data["choices"][0]["message"]
 
     # Check if there is a function call
     

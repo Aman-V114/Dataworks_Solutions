@@ -1,7 +1,16 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config_API:
-    API_KEY=os.environ.get("PROXY_API_KEY")
-    ChatEndpoint=os.environ.get("API_chat_endpoint")
-    EmbeddingEndpoint=os.environ.get("API_embedding_endpoint")
     
+    def __init__(self):
+        
+        self.AIPROXY_TOKEN=os.environ.get("PROXY_API_KEY")
+        self.ChatEndpoint="http://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+        self.EmbeddingEndpoint="http://aiproxy.sanand.workers.dev/openai/v1/embeddings"
+        
+        pass
+
+

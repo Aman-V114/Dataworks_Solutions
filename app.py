@@ -6,14 +6,18 @@ import functions
 
 app = FastAPI()
 
+
 @app.post("/run")
 async def run_task(task: str = Query(..., description="Task description")):
+    
     if not task:
         raise HTTPException(status_code=400, detail="Task description is required")
     
     try:
         response = await functions.chat_with_aiproxy(task)
+        
     except Exception as e:
+        
         raise HTTPException(status_code=400, detail=f"Error in task: {str(e)}")
     
     return JSONResponse(content={"message": response}, status_code=200)
