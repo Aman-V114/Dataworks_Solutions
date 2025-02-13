@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+requests
+python-dotenv
+pillow==11.1.0
+faker
