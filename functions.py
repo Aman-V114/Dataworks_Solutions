@@ -10,12 +10,6 @@ import asyncio
 import aiofiles
 
 
-class DataworksSolutions(pydantic.BaseModel):
-    messages: list
-    functions: list
-    function_call: str
-
-
 # AIProxy URL (assuming it's running locally)
 # Define function schemas
 
@@ -32,6 +26,39 @@ functions = [
             "required": ["email"],
         },
     },
+    {
+        "name": "A2",
+        "description": "Formats the provided document using prettier@3.4.2",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "document_name": {"type": "string", "description": "The Name of the document to be formatted."}
+            },
+            "required": ["document_name"],
+        }
+    },
+    {
+        "name": "A3",
+        "description": "Counts the number of wednesdays in the text document which has one date per line and stores the count in a file named dates-wednesdays.txt",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "document_name": {"type": "string", "description": "The Name of the document to be formatted."}
+            },
+            "required": ["document_name"],
+        }
+    },
+    {
+        "name": "A4",
+        "description": "Takes a json file and sorts the list of json objects on first_name and last_name parameter",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "document_name": {"type": "string", "description": "The Name of the document to be formatted."}
+            },
+            "required": ["document_name"],
+        }
+    }
 ]
 
 
@@ -64,7 +91,12 @@ async def chat_with_aiproxy(user_input):
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=data, headers=headers) as response:
-            response_data = await response.json()
+            try:
+                response_data = await response.json()
+            except Exception as e:
+                html_content = await response.text()
+                print("HTML response:", html_content)
+                raise e  # or handle the error as needed
 
     # Extract model's response
     # Check if 'choices' key is present in the response data
@@ -81,6 +113,10 @@ async def chat_with_aiproxy(user_input):
         # Call the appropriate function
         if function_name == "A1":
             result = await run_datagen("uv", "https://raw.githubusercontent.com/sanand0/tools-in-data-science-public/tds-2025-01/project-1/datagen.py", **function_args)
+        elif function_name=="A2":
+            result = await format_document(**function_args)
+        elif function_name=="A3":
+            result = await count_wednesdays(**function_args)
         else:
             result = "Unknown function."
 
@@ -88,7 +124,8 @@ async def chat_with_aiproxy(user_input):
 
     return response_message["content"]  # If no function call, return normal AI response
 
-
+#done
+#need to adjust for user input
 async def run_datagen(package_name, repo_link, email):
     """
     Checks if the specified package is installed.
@@ -127,10 +164,126 @@ async def run_datagen(package_name, repo_link, email):
         temp_file_path = temp_file.name
 
     # Execute the downloaded file with the provided email parameter
-    run_result = await asyncio.create_subprocess_exec("python3", temp_file_path, email, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    run_result = await asyncio.create_subprocess_exec("uv", "run", temp_file_path, email, "--root", "./data", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await run_result.communicate()
+    
     if run_result.returncode == 0:
         return json.dumps({"message": "Script executed successfully", "output": stdout.decode()})
     else:
         return json.dumps({"error": stderr.decode()})
+#done
+#need to adjust for user input
+async def format_document(document_name):
+    # Construct the file path
+    file_path = os.path.join("./data", document_name)
+    print(file_path)
+    print(document_name)
+    # Read the document content from the data directory
+    try:
+        
+        async with aiofiles.open(file_path, 'r') as file:
+            document_content = await file.read()
 
+    except FileNotFoundError:
+        
+        return json.dumps({"error": "File not found"})
+    
+    except Exception as e:
+        
+        return json.dumps({"error": str(e)})
+
+    # Write the document content to a temporary file
+    async with aiofiles.tempfile.NamedTemporaryFile(delete=False, suffix=".md") as temp_file:
+        
+        await temp_file.write(document_content.encode())
+        temp_file_path = temp_file.name
+
+    # Run prettier to format the document
+    run_result = await asyncio.create_subprocess_exec("npx", "prettier@3.4.2", "--write", temp_file_path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await run_result.communicate()
+
+    # Check if the command was successful
+
+    if run_result.returncode != 0:
+        return json.dumps({"error": stderr.decode()})
+
+
+    # Read the formatted content from the temporary file
+    async with aiofiles.open(temp_file_path, mode='r') as temp_file:
+        formatted_content = await temp_file.read()
+
+
+    # Write the formatted content back to the original document
+    async with aiofiles.open(file_path, mode='w') as file:
+        await file.write(formatted_content)
+
+    return json.dumps({"message": "Document formatted successfully", "formatted_document": formatted_content})
+
+#done
+#need to adjust for user input
+async def count_wednesdays(document_name):
+
+    # Construct the file path
+    file_path = os.path.join("./data", document_name)
+
+    # Read the document content from the data directory
+    try:
+    
+        async with aiofiles.open(file_path, 'r') as file:
+            document_content = await file.read()
+    
+    except FileNotFoundError:
+    
+        return json.dumps({"error": "File not found"})
+    
+    except Exception as e:
+    
+        return json.dumps({"error": str(e)})
+
+    # Split the document content into lines
+    lines = document_content.splitlines()
+
+    # Count the number of Wednesdays in the document
+    from dateutil import parser
+    from datetime import datetime
+
+    wednesday_count = 0
+
+    for line in lines:
+        try:
+            date = parser.parse(line.strip(), fuzzy=True)
+            if date.weekday() == 2:  # Monday is 0, so Wednesday is 2
+                wednesday_count += 1
+        except (ValueError, OverflowError):
+            continue
+
+    # Write the count to a file
+    output_file_path = os.path.join("./data", "dates-wednesdays.txt")
+    async with aiofiles.open(output_file_path, mode='w') as output_file:
+        await output_file.write(str(wednesday_count))
+
+    return json.dumps({"message": "Counted Wednesdays successfully", "wednesday_count": wednesday_count})
+
+    async def sort_contacts(filename):
+        # Construct the file path
+        file_path = os.path.join("./data", filename)
+
+        # Read the JSON content from the file
+        try:
+            async with aiofiles.open(file_path, 'r') as file:
+                content = await file.read()
+                contacts = json.loads(content)
+        except FileNotFoundError:
+            return json.dumps({"error": "File not found"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+        # Sort the contacts first by last_name, then by first_name
+        sorted_contacts = sorted(contacts, key=lambda x: (x['last_name'], x['first_name']))
+
+        # Write the sorted contacts to a new file
+        output_file_path = os.path.join("./data", "contacts-sorted.json")
+        async with aiofiles.open(output_file_path, mode='w') as output_file:
+            await output_file.write(json.dumps(sorted_contacts, indent=4))
+
+        return json.dumps({"message": "Contacts sorted successfully", "output_file": "contacts-sorted.json"})
