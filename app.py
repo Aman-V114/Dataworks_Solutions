@@ -175,7 +175,7 @@ function_definitions_llm = [
     },
     {
         "name": "A8",
-        "description":"Generate an image representation of credit card details from a text file.",
+        "description":"Extract credit card number from an image file and write the credit card number to a text file.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -187,7 +187,7 @@ function_definitions_llm = [
                 "image_path": {
                     "type": "string",
                     "pattern": r".*/(.*\.png)",
-                    "default": "/data/credit-card.png"
+                    "default": "/data/credit_card.png"
                 }
             },
             "required": ["filename", "image_path"]
@@ -409,26 +409,30 @@ async def run_task(task: str):
         task_code = response['name']
         arguments = response['arguments']
 
-        if "A1"== task_code:
-            A1(**json.loads(arguments))
-        if "A2"== task_code:
-            A2(**json.loads(arguments))
-        if "A3"== task_code:
-            A3(**json.loads(arguments))
-        if "A4"== task_code:
-            A4(**json.loads(arguments))
-        if "A5"== task_code:
-            A5(**json.loads(arguments))
-        if "A6"== task_code:
-            A6(**json.loads(arguments))
-        if "A7"== task_code:
-            A7(**json.loads(arguments))
-        if "A8"== task_code:
-            A8(**json.loads(arguments))
-        if "A9"== task_code:
-            A9(**json.loads(arguments))
-        if "A10"== task_code:
-            A10(**json.loads(arguments))
+        if isinstance(arguments, str):
+            arguments = json.loads(arguments)
+
+        
+        if "A1" == task_code:
+            A1(filename=arguments['filename'], targetfile=arguments['targetfile'], email=arguments['email'])
+        if "A2" == task_code:
+            A2(filename=arguments['filename'])
+        if "A3" == task_code:
+            A3(filename=arguments['filename'], targetfile=arguments['targetfile'], weekday=arguments['weekday'])
+        if "A4" == task_code:
+            A4(filename=arguments['filename'], targetfile=arguments['targetfile'])
+        if "A5" == task_code:
+            A5(log_dir_path=arguments['log_dir_path'], output_file_path=arguments['output_file_path'], num_files=arguments['num_files'])
+        if "A6" == task_code:
+            A6(doc_dir_path=arguments['doc_dir_path'], output_file_path=arguments['output_file_path'])
+        if "A7" == task_code:
+            A7(filename=arguments['filename'], output_file=arguments['output_file'])
+        if "A8" == task_code:
+            A8(filename=arguments['filename'], image_path=arguments['image_path'])
+        if "A9" == task_code:
+            A9(filename=arguments['filename'], output_filename=arguments['output_filename'])
+        if "A10" == task_code:
+            A10(filename=arguments['filename'], output_filename=arguments['output_filename'], query=arguments['query'])
 
 
         if "B12"== task_code:

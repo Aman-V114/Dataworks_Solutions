@@ -9,6 +9,9 @@ import os
 import requests
 from scipy.spatial.distance import cosine
 from dotenv import load_dotenv
+import pytesseract
+from PIL import Image
+from PIL import ImageFilter, ImageEnhance
 
 load_dotenv()
 
