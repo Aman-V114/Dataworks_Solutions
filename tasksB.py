@@ -17,7 +17,6 @@ def B12(filepath: str):
         raise PermissionError(f"Access denied to path: {filepath}")
     """"""
     
-    
     """
     Override any deletion attempt (placeholder function).
     """

@@ -460,9 +460,20 @@ async def run_task(task: str):
 
 @app.get("/read", response_class=PlainTextResponse)
 async def read_file(path: str = Query(..., description="File path to read")):
+    
     try:
-        with open('.'+path, "r") as file:
+        BASE_DIR = os.path.join(os.getcwd(), "data")
+        abs_path = os.path.abspath(os.path.join(BASE_DIR, path.lstrip('/')))
+        
+        if not abs_path.startswith(os.path.abspath(BASE_DIR)):
+            raise PermissionError(f"Access denied to path: {path}")
+        
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"File not found: {path}")
+        
+        with open(abs_path, "r") as file:
             return file.read()
+        
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
