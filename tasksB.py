@@ -2,14 +2,28 @@
 
 # B1 & B2: Security Checks
 import os
+import subprocess
 
-def B12(filepath):
-    if filepath.startswith('/data'):
-        # raise PermissionError("Access outside /data is not allowed.")
-        # print("Access outside /data is not allowed.")
-        return True
-    else:
-        return False
+BASE_DIR = os.path.join(os.getcwd(), "data")
+os.makedirs(BASE_DIR, exist_ok=True)
+
+def B12(filepath: str):
+
+    """
+    Ensures that all file operations are restricted to the `data` directory.
+    """
+    abs_path = os.path.abspath(filepath)
+    if not abs_path.startswith(os.path.abspath(BASE_DIR)):
+        raise PermissionError(f"Access denied to path: {filepath}")
+    """"""
+    
+    
+    """
+    Override any deletion attempt (placeholder function).
+    """
+    raise PermissionError("Deletion operations are not allowed.")
+
+
 
 # B3: Fetch Data from an API
 def B3(url, save_path):
@@ -21,10 +35,10 @@ def B3(url, save_path):
         file.write(response.text)
 
 # B4: Clone a Git Repo and Make a Commit
-# def clone_git_repo(repo_url, commit_message):
-#     import subprocess
-#     subprocess.run(["git", "clone", repo_url, "/data/repo"])
-#     subprocess.run(["git", "-C", "/data/repo", "commit", "-m", commit_message])
+def B4(repo_url, commit_message):
+    
+    subprocess.run(["git", "clone", repo_url, "/data/repo"])
+    subprocess.run(["git", "-C", "/data/repo", "commit", "-m", commit_message])
 
 # B5: Run SQL Query
 def B5(db_path, query, output_filename):

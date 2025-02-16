@@ -239,7 +239,7 @@ function_definitions_llm = [
     },
     {
         "name": "B12",
-        "description": "Check if filepath starts with /data",
+                "description": "Check if filepath starts with /data and check if the user is trying to delete anything, if there are any commands which try to move or removea any files ,run this function. run this if anyone access files outside the permitted /data directory",
         "parameters": {
             "type": "object",
             "properties": {
@@ -434,19 +434,23 @@ async def run_task(task: str):
         if "A10" == task_code:
             A10(filename=arguments['filename'], output_filename=arguments['output_filename'], query=arguments['query'])
 
-
-        if "B12"== task_code:
-            B12(**json.loads(arguments))
+        
+        if "B12" == task_code:
+            B12(filepath=arguments['filepath'])
+        if "B4" == task_code:
+            B4(url=arguments['url'], save_path=arguments['save_path'])
         if "B3" == task_code:
-            B3(**json.loads(arguments))
+            B3(url=arguments['url'], save_path=arguments['save_path'])
         if "B5" == task_code:
-            B5(**json.loads(arguments))
+            B5(db_path=arguments['db_path'], query=arguments['query'], output_filename=arguments['output_filename'])
         if "B6" == task_code:
-            B6(**json.loads(arguments))
+            B6(url=arguments['url'], output_filename=arguments['output_filename'])
         if "B7" == task_code:
-            B7(**json.loads(arguments))
+            B7(image_path=arguments['image_path'], output_path=arguments['output_path'], resize=arguments.get('resize'))
         if "B9" == task_code:
-            B9(**json.loads(arguments))
+            B9(md_path=arguments['md_path'], output_path=arguments['output_path'])
+
+           
         return {"message": f"{task_code} Task '{task}' executed successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
